@@ -1,5 +1,13 @@
 import { useCallback, useReducer } from "react";
 
+const initialState = {
+  loading: false,
+  error: null,
+  data: null,
+  extra: null,
+  identifier: null,
+};
+
 // HTTP Reducer is defined outside hook because hooks will get re=rendered when component using it re-renders
 const httpReducer = (currentHttpState, action) => {
   switch (action.type) {
@@ -24,23 +32,14 @@ const httpReducer = (currentHttpState, action) => {
         error: action.error,
       };
     case "CLEAR":
-      return {
-        ...currentHttpState,
-        error: null,
-      };
+      return initialState;
     default:
       throw new Error("Should not get here!");
   }
 };
 
 const useHttp = () => {
-  const [httpState, dispatchHttp] = useReducer(httpReducer, {
-    loading: false,
-    error: null,
-    data: null,
-    extra: null,
-    identifier: null,
-  });
+  const [httpState, dispatchHttp] = useReducer(httpReducer, initialState);
 
   const sendRequest = useCallback(
     (url, method, body, reqExtra, reqIdentifier) => {
@@ -68,11 +67,16 @@ const useHttp = () => {
     []
   );
 
+  const clear = useCallback(() => {
+    dispatchHttp({ type: "CLEAR" });
+  }, []);
+
   return {
     isLoading: httpState.loading,
     data: httpState.data,
     error: httpState.error,
     sendRequest: sendRequest,
+    clear: clear,
     reqExtra: httpState.extra,
     reqIdentifier: httpState.identifier,
   };

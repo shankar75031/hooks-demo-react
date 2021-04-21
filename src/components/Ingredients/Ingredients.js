@@ -29,26 +29,27 @@ const Ingredients = (props) => {
 
   // Set up hooks at the beginning of the function
   const {
-    loading,
+    isLoading,
     error,
     data,
     sendRequest,
     reqExtra,
     reqIdentifier,
+    clear,
   } = useHttp();
 
   useEffect(() => {
     console.log("DATA");
     console.log(data);
-    if (!loading && !error && reqIdentifier === "REMOVE_INGREDIENT") {
+    if (!isLoading && !error && reqIdentifier === "REMOVE_INGREDIENT") {
       console.log("DELTETE");
       dispatch({ type: "DELETE", id: reqExtra });
-    } else if (!loading && data && reqIdentifier === "ADD_INGREDIENT") {
+    } else if (!isLoading && data && reqIdentifier === "ADD_INGREDIENT") {
       console.log("ADD");
       console.log(data);
       dispatch({ type: "ADD", ingredient: { id: data.name, ...reqExtra } });
     }
-  }, [loading, error, data, reqExtra, reqIdentifier]);
+  }, [isLoading, error, data, reqExtra, reqIdentifier]);
 
   // useCallback caches the value of the function it will only rerun only if one of the dependant variables changes. re-rendering of component won't call function.
   const filteredIngredientsHandler = useCallback((filteredIngredients) => {
@@ -85,7 +86,6 @@ const Ingredients = (props) => {
     // Two state changes will be batched by React to avoid unnecessary re-render cycles
     // setError(null);
     // setIsLoading(false);
-    // dispatchHttp({ type: "CLEAR" });
   }, []);
 
   //  Use memo can be used to prevent re-rendering always when a component re-renders.
@@ -100,10 +100,10 @@ const Ingredients = (props) => {
 
   return (
     <div className="App">
-      {error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
+      {error && <ErrorModal onClose={clear}>{error}</ErrorModal>}
       <IngredientForm
         onAddIngredient={addIngredientHandler}
-        loading={loading}
+        loading={isLoading}
       />
 
       <section>
