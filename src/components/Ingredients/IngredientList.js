@@ -8,7 +8,6 @@ const IngredientList = (props) => {
       <h2>Loaded Ingredients</h2>
       <ul>
         {props.ingredients.map((ig) => {
-          console.log(ig.id);
           return (
             <li key={ig.id} onClick={props.onRemoveItem.bind(this, ig.id)}>
               <span>{ig.title}</span>

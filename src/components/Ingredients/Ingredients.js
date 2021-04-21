@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import ErrorModal from "../UI/ErrorModal";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
@@ -7,6 +8,7 @@ import Search from "./Search";
 const Ingredients = (props) => {
   const [userIngredients, setUserIngredients] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState();
 
   // useCallback caches the value of the function it will only rerun only if one of the dependant variables changes. re-rendering of component won't call function.
   const filteredIngredientsHandler = useCallback((filteredIngredients) => {
@@ -36,7 +38,7 @@ const Ingredients = (props) => {
       })
       .catch((err) => {
         console.log(err);
-        setIsLoading(false);
+        setError(err.message);
       });
   };
 
@@ -56,16 +58,23 @@ const Ingredients = (props) => {
       })
       .catch((err) => {
         console.log(err);
-        setIsLoading(false);
+        setError(err.message);
       });
+  };
+
+  const clearError = () => {
+    setError(null);
+    setIsLoading(false);
   };
 
   return (
     <div className="App">
+      {error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
       <IngredientForm
         onAddIngredient={addIngredientHandler}
         loading={isLoading}
       />
+
       <section>
         <Search onLoadIngredients={filteredIngredientsHandler} />
         <IngredientList
