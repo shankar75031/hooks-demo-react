@@ -33,12 +33,30 @@ const Ingredients = (props) => {
       .catch((err) => console.log(err));
   };
 
+  const removeIngredientHandler = (ingredientId) => {
+    fetch(
+      `https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients/${ingredientId}.json`,
+      {
+        method: "DELETE",
+      }
+    )
+      .then((res) => {
+        setUserIngredients((prevIngredients) =>
+          prevIngredients.filter((ing) => ing.id !== ingredientId)
+        );
+      })
+      .catch((err) => console.log(err));
+  };
+
   return (
     <div className="App">
       <IngredientForm onAddIngredient={addIngredientHandler} />
       <section>
         <Search onLoadIngredients={filteredIngredientsHandler} />
-        <IngredientList ingredients={userIngredients} onRemoveItem={() => {}} />
+        <IngredientList
+          ingredients={userIngredients}
+          onRemoveItem={removeIngredientHandler}
+        />
       </section>
     </div>
   );

@@ -39,6 +39,7 @@ const Search = React.memo((props) => {
                 amount: responseData[key].amount,
               });
             }
+            console.log(loadedIngredients);
             //Trigger something in Ingredients
             onLoadIngredients(loadedIngredients);
           })
