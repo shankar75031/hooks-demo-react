@@ -6,6 +6,7 @@ import Search from "./Search";
 
 const Ingredients = (props) => {
   const [userIngredients, setUserIngredients] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // useCallback caches the value of the function it will only rerun only if one of the dependant variables changes. re-rendering of component won't call function.
   const filteredIngredientsHandler = useCallback((filteredIngredients) => {
@@ -13,6 +14,7 @@ const Ingredients = (props) => {
   }, []);
 
   const addIngredientHandler = (ingredient) => {
+    setIsLoading(true);
     fetch(
       "https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients.json",
       {
@@ -22,6 +24,8 @@ const Ingredients = (props) => {
       }
     )
       .then((res) => {
+        setIsLoading(false);
+
         return res.json();
       })
       .then((responseData) => {
@@ -30,10 +34,14 @@ const Ingredients = (props) => {
           { id: responseData.name, ...ingredient },
         ]);
       })
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        console.log(err);
+        setIsLoading(false);
+      });
   };
 
   const removeIngredientHandler = (ingredientId) => {
+    setIsLoading(true);
     fetch(
       `https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients/${ingredientId}.json`,
       {
@@ -41,16 +49,23 @@ const Ingredients = (props) => {
       }
     )
       .then((res) => {
+        setIsLoading(false);
         setUserIngredients((prevIngredients) =>
           prevIngredients.filter((ing) => ing.id !== ingredientId)
         );
       })
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        console.log(err);
+        setIsLoading(false);
+      });
   };
 
   return (
     <div className="App">
-      <IngredientForm onAddIngredient={addIngredientHandler} />
+      <IngredientForm
+        onAddIngredient={addIngredientHandler}
+        loading={isLoading}
+      />
       <section>
         <Search onLoadIngredients={filteredIngredientsHandler} />
         <IngredientList
