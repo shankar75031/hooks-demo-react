@@ -1,4 +1,4 @@
-import React, { useReducer, useState, useCallback } from "react";
+import React, { useReducer, useCallback } from "react";
 import ErrorModal from "../UI/ErrorModal";
 
 import IngredientForm from "./IngredientForm";
@@ -20,11 +20,42 @@ const ingredientReducer = (currentIngredients, action) => {
   }
 };
 
+const httpReducer = (currentHttpState, action) => {
+  switch (action.type) {
+    case "SEND":
+      return {
+        loading: true,
+        error: null,
+      };
+    case "RESPONSE":
+      return {
+        ...currentHttpState,
+        loading: false,
+      };
+    case "ERROR":
+      return {
+        loading: false,
+        error: action.error,
+      };
+    case "CLEAR":
+      return {
+        ...currentHttpState,
+        error: null,
+      };
+    default:
+      throw new Error("Should not get here!");
+  }
+};
+
 const Ingredients = (props) => {
   const [userIngredients, dispatch] = useReducer(ingredientReducer, []);
+  const [httpState, dispatchHttp] = useReducer(httpReducer, {
+    loading: false,
+    error: null,
+  });
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState();
+  // const [isLoading, setIsLoading] = useState(false);
+  // const [error, setError] = useState();
 
   // useCallback caches the value of the function it will only rerun only if one of the dependant variables changes. re-rendering of component won't call function.
   const filteredIngredientsHandler = useCallback((filteredIngredients) => {
@@ -32,7 +63,7 @@ const Ingredients = (props) => {
   }, []);
 
   const addIngredientHandler = (ingredient) => {
-    setIsLoading(true);
+    dispatchHttp({ type: "SEND" });
     fetch(
       "https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients.json",
       {
@@ -42,7 +73,7 @@ const Ingredients = (props) => {
       }
     )
       .then((res) => {
-        setIsLoading(false);
+        dispatchHttp({ type: "RESPONSE" });
 
         return res.json();
       })
@@ -51,40 +82,44 @@ const Ingredients = (props) => {
       })
       .catch((err) => {
         console.log(err);
-        setError(err.message);
+        dispatchHttp({ type: "ERROR", error: err.message });
       });
   };
 
   const removeIngredientHandler = (ingredientId) => {
-    setIsLoading(true);
+    dispatchHttp({ type: "SEND" });
     fetch(
-      `https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients/${ingredientId}.json`,
+      `https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients/${ingredientId}.jon`,
       {
         method: "DELETE",
       }
     )
       .then((res) => {
-        setIsLoading(false);
+        dispatchHttp({ type: "RESPONSE" });
         dispatch({ type: "DELETE", id: ingredientId });
       })
       .catch((err) => {
         console.log(err);
-        setError(err.message);
+        dispatchHttp({ type: "ERROR", error: err.message });
       });
   };
 
   const clearError = () => {
     // Two state changes will be batched by React to avoid unnecessary re-render cycles
-    setError(null);
-    setIsLoading(false);
+    // setError(null);
+    // setIsLoading(false);
+
+    dispatchHttp({ type: "CLEAR" });
   };
 
   return (
     <div className="App">
-      {error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
+      {httpState.error && (
+        <ErrorModal onClose={clearError}>{httpState.error}</ErrorModal>
+      )}
       <IngredientForm
         onAddIngredient={addIngredientHandler}
-        loading={isLoading}
+        loading={httpState.loading}
       />
 
       <section>
