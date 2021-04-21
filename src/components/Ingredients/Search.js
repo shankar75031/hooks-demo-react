@@ -12,13 +12,17 @@ const Search = React.memo((props) => {
   // Second arguement:
   // 1. If empty array it runs only once after the component is first rendered
   // 2. If any variable(s) then first function runs when ever the variable(s) change
+  // 3. Multiple variables are given, then when any one changes the function runs
+
+  // If we return a function for the first arguement function in useEffect then it acts as a cleanup
+  // function and runs before NEXT time the use effect 1st arguement function executes
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       if (enteredFilter === inputRef.current.value) {
         const queryParams =
           enteredFilter.length === 0
             ? ""
-            : `?orderBy=\"title\"&equalTo=\"${enteredFilter}\"`;
+            : `?orderBy="title"&equalTo="${enteredFilter}"`;
         fetch(
           "https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients.json" +
             queryParams
@@ -41,6 +45,9 @@ const Search = React.memo((props) => {
           .catch((err) => console.log(err));
       }
     }, 500);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [enteredFilter, onLoadIngredients, inputRef]);
 
   return (
