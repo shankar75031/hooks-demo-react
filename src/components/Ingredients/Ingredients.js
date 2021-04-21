@@ -1,18 +1,34 @@
-import React, { useState, useCallback } from "react";
+import React, { useReducer, useState, useCallback } from "react";
 import ErrorModal from "../UI/ErrorModal";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
 import Search from "./Search";
 
+// useReducer is usually created outside component so that it is not called again on re-rendered
+// React will re-render component when reducer returns a new state
+const ingredientReducer = (currentIngredients, action) => {
+  switch (action.type) {
+    case "SET":
+      return action.ingredients;
+    case "ADD":
+      return [...currentIngredients, action.ingredient];
+    case "DELETE":
+      return currentIngredients.filter((ing) => ing.id !== action.id);
+    default:
+      throw new Error("Should not get here!");
+  }
+};
+
 const Ingredients = (props) => {
-  const [userIngredients, setUserIngredients] = useState([]);
+  const [userIngredients, dispatch] = useReducer(ingredientReducer, []);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState();
 
   // useCallback caches the value of the function it will only rerun only if one of the dependant variables changes. re-rendering of component won't call function.
   const filteredIngredientsHandler = useCallback((filteredIngredients) => {
-    setUserIngredients(filteredIngredients);
+    dispatch({ type: "SET", ingredients: filteredIngredients });
   }, []);
 
   const addIngredientHandler = (ingredient) => {
@@ -31,10 +47,7 @@ const Ingredients = (props) => {
         return res.json();
       })
       .then((responseData) => {
-        setUserIngredients((prevIngredients) => [
-          ...prevIngredients,
-          { id: responseData.name, ...ingredient },
-        ]);
+        dispatch({ type: "ADD", ingredient: ingredient });
       })
       .catch((err) => {
         console.log(err);
@@ -52,9 +65,7 @@ const Ingredients = (props) => {
     )
       .then((res) => {
         setIsLoading(false);
-        setUserIngredients((prevIngredients) =>
-          prevIngredients.filter((ing) => ing.id !== ingredientId)
-        );
+        dispatch({ type: "DELETE", id: ingredientId });
       })
       .catch((err) => {
         console.log(err);
