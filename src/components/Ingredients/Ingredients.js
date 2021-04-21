@@ -1,4 +1,5 @@
-import React, { useReducer, useCallback, useMemo } from "react";
+import React, { useReducer, useCallback, useMemo, useEffect } from "react";
+import useHttp from "../../hooks/http";
 import ErrorModal from "../UI/ErrorModal";
 
 import IngredientForm from "./IngredientForm";
@@ -20,96 +21,71 @@ const ingredientReducer = (currentIngredients, action) => {
   }
 };
 
-const httpReducer = (currentHttpState, action) => {
-  switch (action.type) {
-    case "SEND":
-      return {
-        loading: true,
-        error: null,
-      };
-    case "RESPONSE":
-      return {
-        ...currentHttpState,
-        loading: false,
-      };
-    case "ERROR":
-      return {
-        loading: false,
-        error: action.error,
-      };
-    case "CLEAR":
-      return {
-        ...currentHttpState,
-        error: null,
-      };
-    default:
-      throw new Error("Should not get here!");
-  }
-};
-
 const Ingredients = (props) => {
   const [userIngredients, dispatch] = useReducer(ingredientReducer, []);
-  const [httpState, dispatchHttp] = useReducer(httpReducer, {
-    loading: false,
-    error: null,
-  });
 
   // const [isLoading, setIsLoading] = useState(false);
   // const [error, setError] = useState();
+
+  // Set up hooks at the beginning of the function
+  const {
+    loading,
+    error,
+    data,
+    sendRequest,
+    reqExtra,
+    reqIdentifier,
+  } = useHttp();
+
+  useEffect(() => {
+    console.log("DATA");
+    console.log(data);
+    if (!loading && !error && reqIdentifier === "REMOVE_INGREDIENT") {
+      console.log("DELTETE");
+      dispatch({ type: "DELETE", id: reqExtra });
+    } else if (!loading && data && reqIdentifier === "ADD_INGREDIENT") {
+      console.log("ADD");
+      console.log(data);
+      dispatch({ type: "ADD", ingredient: { id: data.name, ...reqExtra } });
+    }
+  }, [loading, error, data, reqExtra, reqIdentifier]);
 
   // useCallback caches the value of the function it will only rerun only if one of the dependant variables changes. re-rendering of component won't call function.
   const filteredIngredientsHandler = useCallback((filteredIngredients) => {
     dispatch({ type: "SET", ingredients: filteredIngredients });
   }, []);
 
-  const addIngredientHandler = useCallback((ingredient) => {
-    dispatchHttp({ type: "SEND" });
-    fetch(
-      "https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients.json",
-      {
-        method: "POST",
-        body: JSON.stringify(ingredient),
-        headers: { "Content-Type": "application/json" },
-      }
-    )
-      .then((res) => {
-        dispatchHttp({ type: "RESPONSE" });
+  const addIngredientHandler = useCallback(
+    (ingredient) => {
+      sendRequest(
+        "https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients.json",
+        "POST",
+        JSON.stringify(ingredient),
+        ingredient,
+        "ADD_INGREDIENT"
+      );
+    },
+    [sendRequest]
+  );
 
-        return res.json();
-      })
-      .then((responseData) => {
-        dispatch({ type: "ADD", ingredient: ingredient });
-      })
-      .catch((err) => {
-        console.log(err);
-        dispatchHttp({ type: "ERROR", error: err.message });
-      });
-  }, []);
-
-  const removeIngredientHandler = useCallback((ingredientId) => {
-    dispatchHttp({ type: "SEND" });
-    fetch(
-      `https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients/${ingredientId}.json`,
-      {
-        method: "DELETE",
-      }
-    )
-      .then((res) => {
-        dispatchHttp({ type: "RESPONSE" });
-        dispatch({ type: "DELETE", id: ingredientId });
-      })
-      .catch((err) => {
-        console.log(err);
-        dispatchHttp({ type: "ERROR", error: err.message });
-      });
-  }, []);
+  const removeIngredientHandler = useCallback(
+    (ingredientId) => {
+      sendRequest(
+        `https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients/${ingredientId}.json`,
+        "DELETE",
+        null,
+        ingredientId,
+        "REMOVE_INGREDIENT"
+      );
+    },
+    [sendRequest]
+  );
 
   const clearError = useCallback(() => {
     // Two state changes will be batched by React to avoid unnecessary re-render cycles
     // setError(null);
     // setIsLoading(false);
-
-    dispatchHttp({ type: "CLEAR" });
+    // dispatchHttp({ type: "CLEAR" });
   }, []);
 
   //  Use memo can be used to prevent re-rendering always when a component re-renders.
@@ -124,12 +100,10 @@ const Ingredients = (props) => {
 
   return (
     <div className="App">
-      {httpState.error && (
-        <ErrorModal onClose={clearError}>{httpState.error}</ErrorModal>
-      )}
+      {error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
       <IngredientForm
         onAddIngredient={addIngredientHandler}
-        loading={httpState.loading}
+        loading={loading}
       />
 
       <section>
