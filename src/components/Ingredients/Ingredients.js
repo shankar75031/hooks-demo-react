@@ -1,4 +1,4 @@
-import React, { useReducer, useCallback } from "react";
+import React, { useReducer, useCallback, useMemo } from "react";
 import ErrorModal from "../UI/ErrorModal";
 
 import IngredientForm from "./IngredientForm";
@@ -62,7 +62,7 @@ const Ingredients = (props) => {
     dispatch({ type: "SET", ingredients: filteredIngredients });
   }, []);
 
-  const addIngredientHandler = (ingredient) => {
+  const addIngredientHandler = useCallback((ingredient) => {
     dispatchHttp({ type: "SEND" });
     fetch(
       "https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients.json",
@@ -84,12 +84,12 @@ const Ingredients = (props) => {
         console.log(err);
         dispatchHttp({ type: "ERROR", error: err.message });
       });
-  };
+  }, []);
 
-  const removeIngredientHandler = (ingredientId) => {
+  const removeIngredientHandler = useCallback((ingredientId) => {
     dispatchHttp({ type: "SEND" });
     fetch(
-      `https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients/${ingredientId}.jon`,
+      `https://react-hooks-demo-ad70f-default-rtdb.firebaseio.com/ingredients/${ingredientId}.json`,
       {
         method: "DELETE",
       }
@@ -102,15 +102,25 @@ const Ingredients = (props) => {
         console.log(err);
         dispatchHttp({ type: "ERROR", error: err.message });
       });
-  };
+  }, []);
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     // Two state changes will be batched by React to avoid unnecessary re-render cycles
     // setError(null);
     // setIsLoading(false);
 
     dispatchHttp({ type: "CLEAR" });
-  };
+  }, []);
+
+  //  Use memo can be used to prevent re-rendering always when a component re-renders.
+  const ingredientList = useMemo(() => {
+    return (
+      <IngredientList
+        ingredients={userIngredients}
+        onRemoveItem={removeIngredientHandler}
+      />
+    );
+  }, [userIngredients, removeIngredientHandler]);
 
   return (
     <div className="App">
@@ -124,10 +134,7 @@ const Ingredients = (props) => {
 
       <section>
         <Search onLoadIngredients={filteredIngredientsHandler} />
-        <IngredientList
-          ingredients={userIngredients}
-          onRemoveItem={removeIngredientHandler}
-        />
+        {ingredientList}
       </section>
     </div>
   );
