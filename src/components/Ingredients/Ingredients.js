@@ -63,6 +63,7 @@ const Ingredients = (props) => {
   };
 
   const clearError = () => {
+    // Two state changes will be batched by React to avoid unnecessary re-render cycles
     setError(null);
     setIsLoading(false);
   };
